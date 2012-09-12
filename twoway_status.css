@@ -1,0 +1,25 @@
+div.twoway_status_request {
+  font-weight: bold;
+  font-size: 100%;
+  line-height: 100%;
+}
+span.twoway_queued {
+  color: #AAA;
+}
+span.twoway_connecting {
+  color: #00A;
+}
+span.twoway_offline {
+  color: #A00;
+}
+span.twoway_online {
+  color: #0A0;
+}
+span.twoway_reason {
+  font-weight: normal;
+  color: #999;
+  font-size: 11px;
+}
+span.twoway_service_entry {
+  font-weight: bold;
+}

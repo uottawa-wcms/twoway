@@ -1,0 +1,16 @@
+name = Two-Way
+description = "Allows easy message-response behaviour for two Drupal installations."
+core = 7.x
+package = Development
+
+files[] = classes/TwoWayService.inc
+files[] = classes/TwoWayException.inc
+files[] = classes/TwoWayInvocation.inc
+files[] = classes/TwoWayInvocationHandler.inc
+files[] = classes/TwoWayRemoteResponse.inc
+files[] = classes/TwoWayRequest.inc
+files[] = classes/TwoWayRequestEngine.inc
+files[] = classes/TwoWayResponse.inc
+files[] = classes/TwoWaySecurityProfile.inc
+
+version = "7.x-2.0-alpha1"
