@@ -21,12 +21,12 @@ class TwoWayInvocationHandler {
         return $this->generateError($error_code);
       }
       $args = $this->service_entry['callback_arguments'];
-      array_unshift($cb_args,
+      array_unshift($args,
           $this->invocation->getMessage()->getCallbackArguments(),
           $this->invocation->getMessage()
       );
       try {
-        $results = call_user_func($this->service_entry['callback'], $args);
+        $results = call_user_func_array($this->service_entry['callback'], $args);
         if (!(is_array($results) && !empty($results['state']) && $results['state'] == 'error')) {
           $message = $this->generateResponseMessage($results);
           return $message;
