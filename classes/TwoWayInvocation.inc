@@ -5,7 +5,7 @@ class TwoWayInvocation {
   private $service_entry;
   private $error = '';
   private $request = array();
-  private $message = array();
+  private $message = NULL;
   private $compacted_message = array();
   private $accessing_user = 0;
 
@@ -102,7 +102,7 @@ class TwoWayInvocation {
         $this->request['encrypted_package'],
         $this->request
     );
-    $json = json_decode($this->compacted_message);
+    $json = unserialize($this->compacted_message);
     if (empty($json)) {
       $this->error = 'json-decode-error';
     } else {
@@ -117,7 +117,7 @@ class TwoWayInvocation {
     }
     $this->request = twoway_get_security_profile()->deobfuscateRequestPackage($this->request);
     if (isset($this->request['package_headers'])) {
-      $this->request['package_headers'] = (array) json_decode($this->request['package_headers']);
+      $this->request['package_headers'] = (array) unserialize($this->request['package_headers']);
     }
   }
 

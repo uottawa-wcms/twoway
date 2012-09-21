@@ -107,7 +107,7 @@ class TwoWaySecurityProfile {
    * @param TwoWayResponse $response The response object.
    * @param TwoWayRequest $original_request The original request object.
    */
-  public function prepareResponse(TwoWayResponse &$response, TwoWayRequest $original_request) {
+  public function prepareResponse(TwoWayResponse &$response, $original_request) {
 
   }
 

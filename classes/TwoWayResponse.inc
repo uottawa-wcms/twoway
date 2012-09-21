@@ -38,7 +38,7 @@ class TwoWayResponse {
       'vectors' => $this->vectors,
       'headers' => $this->headers,
     );
-    $compacted = json_encode($inner_package);
+    $compacted = serialize($inner_package);
     $encrypted = twoway_get_security_profile()->encryptResponse($compacted, $this);
     $hmac = twoway_get_security_profile()->generateHMAC($compacted);
     $package = array(

@@ -37,7 +37,7 @@ class TwoWayRequest {
       'message_vars' => $this->message_vars,
       'message' => $this->message,
     );
-    $transport_body = json_encode($pieces);
+    $transport_body = serialize($pieces);
     $message_data = array(
       'encrypted_package' => twoway_get_security_profile()->encryptRequest(
         $transport_body,
@@ -46,7 +46,7 @@ class TwoWayRequest {
       'package_verification' => twoway_get_security_profile()->generateHMAC(
           $transport_body
       ),
-      'package_headers' => json_encode($this->message_vars),
+      'package_headers' => serialize($this->message_vars),
     );
     return twoway_get_security_profile()->obfuscateRequestPackage($message_data);
   }

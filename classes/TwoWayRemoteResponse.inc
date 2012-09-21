@@ -12,7 +12,7 @@ class TwoWayRemoteResponse {
     if (empty($encoded_message)) {
       throw new TwoWayException('Empty return message', 'CLIERR-blank');
     }
-    $this->message = twoway_get_security_profile()->deobfuscateResponsePackage((array) json_decode($encoded_message));
+    $this->message = twoway_get_security_profile()->deobfuscateResponsePackage((array) unserialize($encoded_message));
     if (!(isset($this->message['is_response']) &&
         $this->message['is_response'] == 'yes')) {
       throw new TwoWayException('Debugging detected: ' . var_export($encoded_message, TRUE), 'DEBUG-Debugging');
@@ -28,7 +28,7 @@ class TwoWayRemoteResponse {
     if ($inc_hash != $this->message['package_verification']) {
       throw new TwoWayException('Tampering detected - HMAC', 'CLIERR-tamperhmac');
     }
-    $results = (array) json_decode($decoded);
+    $results = (array) unserialize($decoded);
     if (!(isset($results['headers']) && isset($results['vectors']) && isset($results['data']))) {
       throw new TwoWayException('Tampering detected - Invalid Format', 'CLIERR-tamperenc');
     }

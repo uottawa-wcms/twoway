@@ -93,7 +93,7 @@
   }
 
   function twoway_deliver_json($json) {
-    echo json_encode($json);
+    echo serialize($json);
   }
 
   /**
@@ -221,7 +221,7 @@
           break;
       }
     }
-    echo json_encode($results);
+    echo serialize($results);
   }
 
   /**
