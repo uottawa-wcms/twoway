@@ -22,7 +22,7 @@ class TwoWayRequestEngine {
       throw new TwoWayException($this->lookupHTTPErrorCode($code), 'HTTP-' . $code);
     }
     if (curl_errno($c)) {
-      throw new TwoWayException(curl_error($curl), "CURL-" . curl_errno($curl));
+      throw new TwoWayException(curl_error($c), "CURL-" . curl_errno($c));
     }
     $answer = TRUE;
     if ($this->mode == TWOWAY_RESPONSE) {
