@@ -250,6 +250,7 @@
     );
     $rows = array();
     foreach ($services as $service) {
+      $service = (object) $service;
       $rows[] = array(
         'service' => array('data' => $service->module_name . '.' . $service->service_name),
         'description' => $service->description,

@@ -93,7 +93,7 @@
   }
 
   function twoway_deliver_json($json) {
-    echo serialize($json);
+    echo json_encode($json);
   }
 
   /**

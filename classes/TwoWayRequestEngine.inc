@@ -19,6 +19,7 @@ class TwoWayRequestEngine {
     ));
     $response_obj = curl_exec($c);
     if (($code = curl_getinfo($c, CURLINFO_HTTP_CODE)) >= 400) {
+      var_dump($response_obj);
       throw new TwoWayException($this->lookupHTTPErrorCode($code), 'HTTP-' . $code);
     }
     if (curl_errno($c)) {

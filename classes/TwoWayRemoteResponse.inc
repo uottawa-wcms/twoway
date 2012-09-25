@@ -8,6 +8,20 @@ class TwoWayRemoteResponse {
   private $vectors = array();
   private $response_data = array();
 
+  public function getHeader($key) {
+    if (isset($this->headers[$key])) {
+      return $this->headers[$key];
+    }
+    return NULL;
+  }
+
+  public function getVector($key) {
+    if (isset($this->vectors[$key])) {
+      return $this->vectors[$key];
+    }
+    return NULL;
+  }
+
   function __construct($encoded_message) {
     if (empty($encoded_message)) {
       throw new TwoWayException('Empty return message', 'CLIERR-blank');
