@@ -9,6 +9,9 @@ class TwoWayResponse {
 
   public function __construct(TwoWayInvocation $invocation, array $response, $service_entry) {
     $this->response_data = $response;
+    if (empty($service_entry)) {
+      $service_entry = array('service_name' => '', 'module_name' => '');
+    }
     $this->vectors = array(
       'service_name' => $service_entry['service_name'],
       'module_name' => $service_entry['module_name'],
