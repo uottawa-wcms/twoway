@@ -1,0 +1,320 @@
+<?php
+
+  /**
+   * Indicates we want to use the response from the service
+   */
+  define('TWOWAY_RESPONSE', 1);
+
+  /**
+   * Indicates we don't want to use the response from the service. Instead, the
+   * service invocation will return true.
+   */
+  define('TWOWAY_NO_RESPONSE', 2);
+
+  /**
+   * Retrieves a list of services registered through hook_twoway_service
+   *
+   * Format:
+   *
+   * - callback: A function to call when the service is requested
+   * - message_throttle_global_max: An integer with the maximum number of
+   *     messages to process.
+   * - message_throttle_global_period: Number of seconds to track requests for
+   *     the purposes of throttling (default is 5 minutes)
+   * - message_throttle_max: Maximum number of messages to process per client
+   * - message_throttle_period: Number of seconds to track requests per client
+   *     (default is 5 minutes)
+   * - message_decay: Number of seconds that messages will be valid for. Default
+   *     is 5 minutes.
+   * - require_ssl: Set to true to force use of SSL
+   * - access_callback: Security callback function to verify that the user
+   *     has access to. Default is open access.
+   * -
+   *
+   * @return array An array of service items
+   */
+  function twoway_get_services() {
+    $services = drupal_static(__FUNCTION__);
+    if (empty($services)) {
+      $services = array();
+      $modules = module_implements('twoway_service');
+      foreach ($modules as $module) {
+        $slist = module_invoke($module, 'twoway_service');
+        $services[$module] = array();
+        foreach ($slist as $service_name => $service_desc) {
+          $services[$module][$service_name] = $service_desc + array(
+            'service_name' => $service_name,
+            'module_name' => $module,
+            'callback' => NULL,
+            'callback_arguments' => array(),
+            'require_ssl' => FALSE,
+            'access_callback' => TRUE,
+            'access_arguments' => array(),
+            'service_file' => NULL,
+          );
+        }
+      }
+    }
+    return $services;
+  }
+
+  /**
+   * Returns the security profile that should be used for message encryption.
+   *
+   * @return TwoWaySecurityProfile Security profile implementation
+   */
+  function twoway_get_security_profile() {
+    $security = drupal_static(__FUNCTION__);
+    if (empty($security)) {
+      $security_class = 'TwoWaySecurityProfile';
+      $modules = module_implements('twoway_security');
+      foreach ($modules as $module) {
+        $security_class = module_invoke($module, 'twoway_security');
+      }
+      $security = new $security_class();
+    }
+    return $security;
+  }
+
+  function twoway_twoway_service() {
+    return array(
+      // Open service to see if Two-Way is enabled
+      'enabled' => array(
+        'callback' => 'twoway_services_enabled',
+        'service_file' => 'services/twoway.enabled.inc',
+        'description' => 'Basic service to check if two-way is enabled',
+      ),
+      'available' => array(
+        'callback' => 'twoway_get_available_services',
+        'service_file' => 'services/twoway.available.inc',
+        'description' => 'Retrieves a list of services that the user has access to',
+      )
+    );
+  }
+
+  function twoway_deliver_json($json) {
+    echo json_encode($json);
+  }
+
+  /**
+   * Implements hook_menu
+   */
+  function twoway_menu() {
+    // This is a MENU_CALLBACK that processes a twoway end-point
+    return array(
+      'twoway/get_status/%twoway_server' => array(
+        'title' => 'AJAX Callback - Load a Service Status',
+        'page callback' => 'twoway_server_status_callback',
+        'page arguments' => array(2),
+        'access callback' => TRUE,
+        'type' => MENU_CALLBACK,
+        'delivery callback' => 'twoway_deliver_json',
+        'file' => 'twoway.pages.inc',
+      ),
+      'admin/services' => array(
+        'title' => 'Services',
+        'description' => 'A list of services',
+        'access arguments'=> array('access admin pages'),
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('twoway_all_services_form'),
+        'file' => 'twoway.pages.inc',
+      ),
+      'admin/services/list' => array(
+        'title' => 'Services',
+        'description' => 'A list of services',
+        'access arguments'=> array('access admin pages'),
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('twoway_all_services_form'),
+        'type' => MENU_DEFAULT_LOCAL_TASK,
+        'file' => 'twoway.pages.inc',
+      ),
+      'admin/services/servers' => array(
+        'title' => 'Remote Servers',
+        'description' => 'A list of remote servers',
+        'access arguments'=> array('twoway_server_access'),
+        'page callback' => 'twoway_all_servers_page',
+        'type' => MENU_LOCAL_TASK,
+        'file' => 'twoway.pages.inc',
+      ),
+      'admin/services/servers/add' => array(
+        'title' => 'Add Remote Server',
+        'description' => 'Add a new server',
+        'access arguments'=> array('twoway_server_access'),
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('twoway_add_server_form'),
+        'type' => MENU_LOCAL_ACTION,
+        'file' => 'twoway.pages.inc',
+      ),
+      'admin/services/servers/%twoway_server/edit' => array(
+        'title' => 'Edit Server',
+        'description' => 'Edit a server',
+        'access arguments'=> array('twoway_server_access'),
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('twoway_edit_server_form', 3),
+        'type' => MENU_CALLBACK,
+        'file' => 'twoway.pages.inc',
+      ),
+      'admin/services/servers/%twoway_server/services' => array(
+        'title' => 'Active Services',
+        'description' => 'List of active services',
+        'access arguments'=> array('twoway_server_access'),
+        'page callback' => 'twoway_get_remote_service_list',
+        'page arguments' => array(3),
+        'type' => MENU_CALLBACK,
+        'file' => 'twoway.pages.inc',
+      ),
+      'admin/services/servers/%twoway_server/delete' => array(
+        'title' => 'Delete Server',
+        'description' => 'Delete a server',
+        'access arguments'=> array('twoway_server_access'),
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('twoway_delete_server_form', 3),
+        'type' => MENU_CALLBACK,
+        'file' => 'twoway.pages.inc',
+      ),
+      'twoway-endpoint/%twoway_module/%twoway_endpoint' => array (
+          'title' => 'Service End-Points',
+          'description' => 'Provides handling for two-way communications',
+          'page callback' => 'twoway_invocation',
+          'page arguments' => array(2),
+          'load arguments' => array(1),
+          'delivery callback' => 'twoway_deliver_service_results',
+          'access callback' => 'twoway_service_access',
+          'type' => MENU_CALLBACK,
+          'file' => 'twoway.api.inc',
+      ),
+    );
+  }
+
+  /**
+   * Basic service access function. Always allows access now.
+   *
+   * TODO: Extend this to use a role perhaps?
+   *
+   * @return boolean True if we can access servers, otherwise false.
+   */
+  function twoway_service_access() {
+    return true;
+  }
+
+  /**
+   * Formats response as JSON for easy transferral
+   * @param $results array The result array from the invocation
+   * @return string A JSON encoded array
+   */
+  function twoway_deliver_service_results($results) {
+    drupal_add_http_header('Content-Type', 'text/javascript; charset=utf-8');
+    global $language;
+    drupal_add_http_header('Content-Language', $language->language);
+    if (is_int($results)) {
+      switch ($results) {
+        case MENU_NOT_FOUND:
+          $results = TwoWayInvocationHandler::createErrorResponse('Cannot find service', 'no-service-found');
+          break;
+        case MENU_ACCESS_DENIED:
+          $results = TwoWayInvocationHandler::createErrorResponse('Cannot access service', 'service-forbidden');
+          break;
+        case MENU_SITE_OFFLINE:
+          $results = TwoWayInvocationHandler::createErrorResponse('Site is unavailable', 'site-offline');
+          module_load_include('inc', 'twoway', 'twoway.api');
+          $results = twoway_generate_error('site-offline', null);
+          break;
+      }
+    }
+    echo serialize($results);
+  }
+
+  /**
+   * Retrieves a list of the servers registered with Two-Way
+   *
+   * @return array List of servers, suitable for use in the Form API select
+   */
+  function twoway_server_list() {
+    $list = drupal_static(__FUNCTION__);
+    if (empty($list)) {
+      $list = array();
+      $rs = db_query("SELECT * FROM {twoway_servers} ORDER BY server_display");
+      foreach ($rs as $row) {
+        $list[$row->server_machine] = $row->server_display;
+      }
+    }
+    return $list;
+  }
+
+  /**
+   * Loads a server by it's machine name
+   *
+   * @param string $arg Machine name
+   * @return array|false Associative array of server info or false if not found
+   */
+  function twoway_server_load($arg) {
+    $rs = db_query("SELECT * FROM {twoway_servers} WHERE server_machine = :mach", array(
+        ":mach" => $arg
+    ));
+    if ($rs->rowCount() > 0) {
+      return $rs->fetchAssoc();
+    }
+    return false;
+  }
+
+  /**
+   * Implements hook_permission()
+   */
+  function twoway_permission() {
+    return array(
+      'twoway_server_access' => array(
+        'title' => t('Manage Two-Way Servers'),
+        'description' => t('Allows the user to manage the two-way server configurations'),
+        'restrict access' => TRUE,
+      )
+    );
+  }
+
+  /**
+   * Implements hook_load
+   */
+  function twoway_module_load($module) {
+    $list = twoway_get_services();
+    if (isset($list[$module])) {
+      return $module;
+    }
+    return NULL;
+  }
+
+  /**
+   * Implements hook_load
+   */
+  function twoway_endpoint_load($endpoint, $module) {
+    $list = twoway_get_services();
+    if (isset($list[$module])) {
+      if (isset($list[$module][$endpoint])) {
+        return $list[$module][$endpoint];
+      }
+    }
+    return NULL;
+  }
+
+  function twoway_get_server_path() {
+    return $GLOBALS['base_url'];
+  }
+
+  function twoway_set_enabled($key, $enabled) {
+    $inactive = variable_get('twoway_inactive_list', array());
+    if ($enabled) {
+      if (isset($inactive[$key])) {
+        unset($inactive[$key]);
+      }
+    } else {
+      $inactive[$key] = $key;
+    }
+    variable_set('twoway_inactive_list', $inactive);
+  }
+
+  function twoway_check_enabled($module_name, $service_name) {
+    $inactive = variable_get('twoway_inactive_list', array());
+    if (in_array($module_name . '.'. $service_name, $inactive)) {
+      return false;
+    } else {
+      return true;
+    }
+  }

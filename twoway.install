@@ -1,0 +1,49 @@
+<?php
+
+  function _twoway_schema_servers() {
+    return array(
+      'fields' => array(
+        'server_id' => array(
+          'type' => 'serial',
+          'size' => 'medium',
+          'unsigned' => true,
+          'not null' => true,
+        ),
+        'server_machine' => array(
+          'type' => 'varchar',
+          'length' => 64,
+          'not null' => true,
+        ),
+        'server_display' => array(
+          'type' => 'varchar',
+          'length' => 512,
+          'not null' => true,
+        ),
+        'server_connection' => array(
+          'type' => 'varchar',
+          'length' => 256,
+          'not null' => true,
+        ),
+        'default_username' => array(
+          'type' => 'varchar',
+          'length' => 128,
+          'not null' => false,
+        ),
+        'default_password' => array(
+          'type' => 'varchar',
+          'length' => 128,
+          'not null' => false,
+        )
+      ),
+      'primary key' => array('server_id'),
+      'unique keys' => array(
+        'server_machine' => array('server_machine'),
+      )
+    );
+  }
+
+  function twoway_schema() {
+    return array(
+      'twoway_servers' => _twoway_schema_servers(),
+    );
+  }
