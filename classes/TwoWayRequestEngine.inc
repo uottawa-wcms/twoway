@@ -78,7 +78,7 @@ class TwoWayRequestEngine {
   private function getRequestTimeout() {
     $timeout = $this->request->getLocalVar('timeout');
     if (empty($timeout)) {
-      $timeout = 30;
+      $timeout = 60;
     }
     return $timeout;
   }
