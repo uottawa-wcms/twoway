@@ -1,4 +1,3 @@
-
 (function($) {
 
   Drupal.ajax.prototype.triggeredResponse = function() {
@@ -48,5 +47,4 @@
   $(document).ready(function() {
     twoway_status_update_next();
   });
-
 }) (jQuery);
