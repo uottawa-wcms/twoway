@@ -26,7 +26,8 @@ class TwoWayRemoteResponse {
     if (empty($encoded_message)) {
       throw new TwoWayException('Empty return message', 'CLIERR-blank');
     }
-    $this->message = twoway_get_security_profile()->deobfuscateResponsePackage((array) @unserialize($encoded_message));
+    $this->message = twoway_get_security_profile()->deobfuscateResponsePackage((array) @unserialize(trim($encoded_message)));
+    
     if (!(isset($this->message['is_response']) &&
         $this->message['is_response'] == 'yes')) {
       throw new TwoWayException('Debugging detected: ' . var_export($encoded_message, TRUE), 'DEBUG-Debugging');
