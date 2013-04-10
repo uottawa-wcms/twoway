@@ -94,6 +94,10 @@
 
   function twoway_deliver_json($json) {
     echo json_encode($json);
+    //// prevent devel from mucking up our AJAX
+    if (module_exists('devel')) {
+      devel_ajax_render_alter();
+    }
   }
 
   /**
